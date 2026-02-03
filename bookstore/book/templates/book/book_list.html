@@ -1,0 +1,212 @@
+{% extends 'book/base.html' %}
+
+{% block title %}Каталог книг{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">📚 Каталог книг</h1>
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control"
+                       placeholder="Поиск по названию или автору..."
+                       value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-3">
+                <select name="genre" class="form-select">
+                    <option value="">Все жанры</option>
+                    {% for value, label in view.model.GENRE_CHOICES %}
+                    <option value="{{ value }}"
+                            {% if request.GET.genre == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="sort_by" class="form-select">
+                    <option value="-created_at" {% if request.GET.sort_by == '-created_at' %}selected{% endif %}>
+                        По дате (новые)
+                    </option>
+                    <option value="title" {% if request.GET.sort_by == 'title' %}selected{% endif %}>
+                        По названию (А-Я)
+                    </option>
+                    <option value="-title" {% if request.GET.sort_by == '-title' %}selected{% endif %}>
+                        По названию (Я-А)
+                    </option>
+                    <option value="-rating" {% if request.GET.sort_by == '-rating' %}selected{% endif %}>
+                        По рейтингу
+                    </option>
+                    <option value="-price_rub" {% if request.GET.sort_by == '-price_rub' %}selected{% endif %}>
+                        По цене (дорогие)
+                    </option>
+                    <option value="price_rub" {% if request.GET.sort_by == 'price_rub' %}selected{% endif %}>
+                        По цене (дешевые)
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    Применить
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="alert alert-info">
+    Найдено книг: <strong>{{ total_books }}</strong>
+    {% if recent_books %}
+    • Последние добавленные:
+    {% for book in recent_books %}
+    <a href="{% url 'book:book_detail' book.pk %}">{{ book.title }}</a>{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+    {% endif %}
+</div>
+
+<!-- Таблица книг -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Название</th>
+                <th>Автор</th>
+                <th>Жанр</th>
+                <th>Цена</th>
+                <th>Рейтинг</th>
+                <th>Год</th>
+                <th>Наличие</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for book in books %}
+            <tr>
+                <td>
+                    <strong>{{ book.title }}</strong>
+                    {% if book.isbn %}
+                    <br><small class="text-muted">ISBN: {{ book.isbn }}</small>
+                    {% endif %}
+                </td>
+                <td>{{ book.author }}</td>
+                <td>
+                    <span class="badge bg-primary">
+                        {{ book.get_genre_display }}
+                    </span>
+                </td>
+                <td class="text-end">
+                    <strong>{{ book.price_rub }} ₽</strong>
+                </td>
+                <td>
+                    {% if book.rating %}
+                    <div class="text-warning">
+                        {% with ''|center:book.rating as range %}
+                        {% for _ in range|slice:":5" %}★{% endfor %}
+                        {% endwith %}
+                        <small class="text-muted">({{ book.rating }})</small>
+                    </div>
+                    {% else %}
+                    <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if book.publication_year %}
+                    {{ book.publication_year }}
+                    {% else %}
+                    <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if book.is_available %}
+                    <span class="badge bg-success">В наличии</span>
+                    {% else %}
+                    <span class="badge bg-danger">Нет</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'book:book_detail' book.pk %}"
+                           class="btn btn-outline-primary" title="Просмотр">
+                            👁️
+                        </a>
+                        <a href="{% url 'book:book_update' book.pk %}"
+                           class="btn btn-outline-warning" title="Редактировать">
+                            ✏️
+                        </a>
+                        <a href="{% url 'book:book_delete' book.pk %}"
+                           class="btn btn-outline-danger" title="Удалить">
+                            🗑️
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center py-4">
+                    <div class="alert alert-warning">
+                        Книги не найдены.
+                        <a href="{% url 'book:book_create' %}">Добавьте первую книгу</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Пагинация -->
+{% if is_paginated %}
+<nav aria-label="Навигация">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                Первая
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                Назад
+            </a>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                {{ num }}
+            </a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                Вперед
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                Последняя
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<div class="mt-4 text-center">
+    <a href="{% url 'book:book_create' %}" class="btn btn-success btn-lg">
+        ➕ Добавить новую книгу
+    </a>
+</div>
+{% endblock %}

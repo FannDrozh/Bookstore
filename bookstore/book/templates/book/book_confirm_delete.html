@@ -1,0 +1,32 @@
+{% extends 'book/base.html' %}
+
+{% block title %}Удалить книгу{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Подтверждение удаления</h4>
+            </div>
+            <div class="card-body text-center">
+                <h5>Вы уверены, что хотите удалить книгу?</h5>
+                <p class="lead">"{{ book.title }}" - {{ book.author }}</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-danger">
+                            Да, удалить
+                        </button>
+                        <a href="{% url 'book:book_detail' book.pk %}"
+                           class="btn btn-secondary">
+                            Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

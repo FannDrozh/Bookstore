@@ -1,0 +1,155 @@
+{% extends 'book/base.html' %}
+
+{% block title %}{{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Левая колонка - информация -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h1 class="card-title">{{ book.title }}</h1>
+                <h3 class="card-subtitle mb-3 text-muted">{{ book.author }}</h3>
+                
+                <div class="mb-3">
+                    <span class="badge bg-primary">{{ book.get_genre_display }}</span>
+                    <span class="badge bg-success ms-2">{{ book.price_rub }} ₽</span>
+                    {% if book.rating %}
+                    <span class="badge bg-warning ms-2">{{ book.rating }}/10</span>
+                    {% endif %}
+                    {% if book.is_available %}
+                    <span class="badge bg-success ms-2">В наличии</span>
+                    {% else %}
+                    <span class="badge bg-danger ms-2">Нет в наличии</span>
+                    {% endif %}
+                </div>
+                
+                {% if book.cover_image %}
+                <div class="mb-4 text-center">
+                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" 
+                         class="img-fluid rounded" style="max-height: 300px;">
+                </div>
+                {% endif %}
+                
+                {% if book.short_description %}
+                <div class="mb-4">
+                    <h5>📖 Описание:</h5>
+                    <p>{{ book.short_description|linebreaks }}</p>
+                </div>
+                {% endif %}
+                
+                {% if book.reading_reason %}
+                <div class="mb-4">
+                    <h5>💡 Почему стоит прочитать:</h5>
+                    <p>{{ book.reading_reason|linebreaks }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="row mb-4">
+                    {% if book.isbn %}
+                    <div class="col-md-6">
+                        <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+                    </div>
+                    {% endif %}
+                    {% if book.publication_year %}
+                    <div class="col-md-6">
+                        <p><strong>Год издания:</strong> {{ book.publication_year }}</p>
+                    </div>
+                    {% endif %}
+                    {% if book.page_count %}
+                    <div class="col-md-6">
+                        <p><strong>Страниц:</strong> {{ book.page_count }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="text-muted">
+                    <small>Добавлено: {{ book.created_at|date:"d.m.Y H:i" }}</small>
+                    {% if book.updated_at != book.created_at %}
+                    <br><small>Обновлено: {{ book.updated_at|date:"d.m.Y H:i" }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Отзывы -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">💬 Отзывы ({{ reviews.count }})</h5>
+            </div>
+            <div class="card-body">
+                {% for review in reviews %}
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>{{ review.reviewer_name }}</strong>
+                        <small class="text-muted">{{ review.created_at|date:"d.m.Y H:i" }}</small>
+                    </div>
+                    <div class="mb-2 text-warning">
+                        {% with ''|center:review.rating as range %}
+                        {% for _ in range %}★{% endfor %}
+                        {% endwith %}
+                        ({{ review.rating }}/10)
+                    </div>
+                    <p>{{ review.text|linebreaks }}</p>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">Отзывов пока нет</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Правая колонка - действия и похожие книги -->
+    <div class="col-md-4">
+        <!-- Действия -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">⚙️ Действия</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'book:book_update' book.pk %}" 
+                       class="btn btn-warning">
+                        Редактировать книгу
+                    </a>
+                    <a href="{% url 'book:book_delete' book.pk %}" 
+                       class="btn btn-danger">
+                        Удалить книгу
+                    </a>
+                    <a href="{% url 'book:book_list' %}" 
+                       class="btn btn-secondary">
+                        ← Назад к списку
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Похожие книги -->
+        {% if similar_books %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📚 Похожие книги</h5>
+            </div>
+            <div class="card-body">
+                {% for similar in similar_books %}
+                <div class="mb-3">
+                    <h6>
+                        <a href="{% url 'book:book_detail' similar.pk %}">
+                            {{ similar.title }}
+                        </a>
+                    </h6>
+                    <p class="text-muted mb-1">{{ similar.author }}</p>
+                    <div>
+                        <span class="badge bg-success">{{ similar.price_rub }} ₽</span>
+                        {% if similar.rating %}
+                        <span class="badge bg-warning ms-1">{{ similar.rating }}/10</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

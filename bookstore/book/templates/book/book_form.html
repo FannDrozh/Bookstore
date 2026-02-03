@@ -1,0 +1,53 @@
+{% extends 'book/base.html' %}
+
+{% block title %}{{ title|default:"Добавить книгу" }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    {% if object %}
+                        <i class="bi bi-pencil"></i> Редактирование: {{ object.title }}
+                    {% else %}
+                        <i class="bi bi-plus-circle"></i> Добавить новую книгу
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            {% if object %}
+                                <i class="bi bi-check-circle"></i> Обновить
+                            {% else %}
+                                <i class="bi bi-plus-circle"></i> Добавить
+                            {% endif %}
+                        </button>
+
+                        {% if object %}
+                            <!-- Для редактирования - вернуться к деталям книги -->
+                            <a href="{% url 'book:book_detail' object.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Отмена
+                            </a>
+                        {% else %}
+                            <!-- Для создания - вернуться к списку книг -->
+                            <a href="{% url 'book:book_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Отмена
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% endblock %}

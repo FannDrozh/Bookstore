@@ -1,0 +1,363 @@
+{% extends 'book/base.html' %}
+
+{% block title %}Статистика - Книжный каталог{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Статистика</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-chart-bar text-primary me-2"></i>Статистика книжного каталога</h1>
+        <a href="{% url 'book:export_books' %}" class="btn btn-success">
+            <i class="fas fa-file-export me-2"></i>Экспорт в CSV
+        </a>
+    </div>
+    
+    <!-- Основные метрики -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Всего книг
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_books }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                В наличии
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ available_books }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                С отзывами
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ books_with_reviews }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-comments fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Добавлено за месяц
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ recent_month }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-plus fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Статистика по ценам -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-line me-2"></i>Статистика по ценам
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Показатель</th>
+                                    <th class="text-end">Значение</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Средняя цена книги</td>
+                                    <td class="text-end font-weight-bold">
+                                        {{ price_stats.avg_price|floatformat:2 }} ₽
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Самая дешевая книга</td>
+                                    <td class="text-end text-success">
+                                        {{ price_stats.min_price|floatformat:2 }} ₽
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Самая дорогая книга</td>
+                                    <td class="text-end text-danger">
+                                        {{ price_stats.max_price|floatformat:2 }} ₽
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Общая стоимость каталога</td>
+                                    <td class="text-end font-weight-bold text-primary">
+                                        {{ price_stats.total_value|floatformat:2 }} ₽
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Ценовые категории -->
+                    <h6 class="mt-4 mb-3">Распределение по ценовым категориям</h6>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="progress mb-3" style="height: 30px;">
+                                {% with total=total_books %}
+                                {% if total > 0 %}
+                                {% with cheap=books.cheap.count|default:0 mid=books.mid.count|default:0 expensive=books.expensive.count|default:0 premium=books.premium.count|default:0 %}
+                                <div class="progress-bar bg-success" style="width: {% widthratio cheap total 100 %}%">
+                                    <span>До 300₽</span>
+                                </div>
+                                <div class="progress-bar bg-info" style="width: {% widthratio mid total 100 %}%">
+                                    <span>300-700₽</span>
+                                </div>
+                                <div class="progress-bar bg-warning" style="width: {% widthratio expensive total 100 %}%">
+                                    <span>700-1000₽</span>
+                                </div>
+                                <div class="progress-bar bg-danger" style="width: {% widthratio premium total 100 %}%">
+                                    <span>От 1000₽</span>
+                                </div>
+                                {% endwith %}
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-end">
+                                <small class="text-muted">
+                                    Всего: {{ total_books }} книг
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Быстрые действия -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-bolt me-2"></i>Быстрые действия
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'book:book_list' %}?sort_by=-rating"
+                           class="btn btn-outline-primary btn-block">
+                            <i class="fas fa-star me-2"></i>Топ по рейтингу
+                        </a>
+                        <a href="{% url 'book:book_list' %}?price_range=1000-"
+                           class="btn btn-outline-warning btn-block">
+                            <i class="fas fa-gem me-2"></i>Самые дорогие
+                        </a>
+                        <a href="{% url 'book:book_list' %}?sort_by=-publication_year"
+                           class="btn btn-outline-info btn-block">
+                            <i class="fas fa-calendar-star me-2"></i>Новинки
+                        </a>
+                        <a href="{% url 'book:book_create' %}"
+                           class="btn btn-success btn-block">
+                            <i class="fas fa-plus me-2"></i>Добавить книгу
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Статистика по жанрам -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-tags me-2"></i>Распределение по жанрам
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Жанр</th>
+                                    <th class="text-end">Кол-во</th>
+                                    <th class="text-end">Доля</th>
+                                    <th class="text-end">Ср. цена</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in genre_stats %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-book me-2"></i>{{ stat.name }}
+                                    </td>
+                                    <td class="text-end">{{ stat.count }}</td>
+                                    <td class="text-end">{{ stat.percentage|floatformat:1 }}%</td>
+                                    <td class="text-end">{{ stat.avg_price|floatformat:2 }} ₽</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Книги по годам -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-calendar-alt me-2"></i>Книги по годам издания
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Годы</th>
+                                    <th class="text-end">Кол-во книг</th>
+                                    <th class="text-end">Доля</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for years, count in year_groups.items %}
+                                <tr>
+                                    <td>{{ years }}</td>
+                                    <td class="text-end">{{ count }}</td>
+                                    <td class="text-end">
+                                        {% widthratio count total_books 100 as percentage %}
+                                        {{ percentage|floatformat:1 }}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Топ авторов -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">
+                        <i class="fas fa-crown me-2"></i>Топ-10 авторов по количеству книг
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Автор</th>
+                                    <th class="text-end">Кол-во книг</th>
+                                    <th class="text-end">Ср. рейтинг</th>
+                                    <th class="text-end">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for author in top_authors %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <i class="fas fa-user-pen me-2"></i>
+                                        {{ author.author }}
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-primary">{{ author.book_count }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        {% if author.avg_rating %}
+                                        <span class="text-warning">
+                                            {{ author.avg_rating|floatformat:1 }}/10
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'book:author_books' author.author|urlencode %}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> Показать
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Инициализация всплывающих подсказок
+document.addEventListener('DOMContentLoaded', function() {
+    // Включение подсказок Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
