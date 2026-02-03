@@ -21,7 +21,7 @@ class BookListView(ListView):
     """Главная страница - список всех книг"""
     model = Book
     template_name = 'book/book_list.html'
-    context_object_name = 'book'
+    context_object_name = 'books'
     paginate_by = 15
 
     def get_queryset(self):
@@ -90,7 +90,7 @@ class BookCreateView(LoginRequiredMixin, CreateView):
     model = Book
     form_class = BookForm
     template_name = 'book/book_form.html'
-    success_url = reverse_lazy('book_list')
+    success_url = reverse_lazy('book:book_list')
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
@@ -154,7 +154,7 @@ class SearchResultsView(ListView):
     """Расширенный поиск по книгам"""
     model = Book
     template_name = 'book/search_results.html'
-    context_object_name = 'book'
+    context_object_name = 'books'
     paginate_by = 10
 
     def get_queryset(self):
@@ -313,7 +313,7 @@ class GenreBooksView(ListView):
     """Страница книг определенного жанра"""
     model = Book
     template_name = 'book/genre_books.html'
-    context_object_name = 'book'
+    context_object_name = 'books'
     paginate_by = 12
 
     def get_queryset(self):
@@ -331,7 +331,7 @@ class AuthorBooksView(ListView):
     """Страница книг определенного автора"""
     model = Book
     template_name = 'book/author_books.html'
-    context_object_name = 'book'
+    context_object_name = 'books'
     paginate_by = 12
 
     def get_queryset(self):
